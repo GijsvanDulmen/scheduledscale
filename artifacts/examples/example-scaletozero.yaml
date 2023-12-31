@@ -1,0 +1,11 @@
+apiVersion: scheduledscale.vandulmen.net/v1alpha1
+kind: DeploymentScaling
+metadata:
+  name: scale-to-zero
+spec:
+  deployment:
+    matchLabels:
+      scale-me: "true"
+  scaleTo:
+    - at: "30 * * * * *"
+      replicas: 0

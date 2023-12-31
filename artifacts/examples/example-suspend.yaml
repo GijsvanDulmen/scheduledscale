@@ -1,0 +1,52 @@
+apiVersion: scheduledscale.vandulmen.net/v1alpha1
+kind: CronJobSuspend
+metadata:
+  name: suspend-me
+spec:
+  cronjob:
+    matchLabels:
+      suspend-me: "true"
+  stateAt:
+    # crontab: minute / hour / day / month / day week
+    - at: "50 * * * * *"
+      suspend: true
+
+      annotations:
+        add:
+          "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+
+    - at: "10 * * * * *"
+      suspend: false
+
+      annotations:
+        remove:
+          - "cluster-autoscaler.kubernetes.io/safe-to-evict"
+
+    - at: "20 * * * * *"
+      suspend: true
+
+      annotations:
+        add:
+          "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+
+    - at: "30 * * * * *"
+      suspend: false
+
+      annotations:
+        remove:
+          - "cluster-autoscaler.kubernetes.io/safe-to-evict"
+
+    - at: "35 * * * * *"
+      suspend: true
+
+      annotations:
+        add:
+          "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+
+    - at: "40 * * * * *"
+      suspend: false
+
+      annotations:
+        remove:
+          - "cluster-autoscaler.kubernetes.io/safe-to-evict"
+

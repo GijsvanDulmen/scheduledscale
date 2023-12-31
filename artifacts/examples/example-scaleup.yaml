@@ -1,0 +1,24 @@
+apiVersion: scheduledscale.vandulmen.net/v1alpha1
+kind: DeploymentScaling
+metadata:
+  name: scale-up
+spec:
+  onDelete:
+    removePodDisruptionBudget: false # will only
+
+  deployment:
+    matchLabels:
+      scale-me: "true"
+  scaleTo:
+    # crontab: minute / hour / day / month / day week
+    - at: "10 * * * * *"
+      replicas: 2
+
+      podDisruptionBudget:
+        enable: true
+        minAvailable: 1
+
+      annotations:
+        add:
+          "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+

@@ -1,0 +1,17 @@
+apiVersion: scheduledscale.vandulmen.net/v1alpha1
+kind: DeploymentScaling
+metadata:
+  name: scale-down
+spec:
+  deployment:
+    matchLabels:
+      scale-me: "true"
+  scaleTo:
+    - at: "20 * * * * *"
+      replicas: 1
+      
+      annotations:
+        remove:
+        - "cluster-autoscaler.kubernetes.io/safe-to-evict"
+
+

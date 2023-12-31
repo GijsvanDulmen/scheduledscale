@@ -1,0 +1,38 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: scheduledscale-controller-role
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{ template "scheduledscale.common-labels" . }}
+rules:
+  - apiGroups:
+      - "policy"
+    resources:
+      - "poddisruptionbudgets"
+    verbs:
+      - "*"
+  - apiGroups:
+      - "apps"
+    resources:
+      - "deployments"
+    verbs:
+      - "list"
+      - "patch"
+      - "get"
+      - "update"
+  - apiGroups:
+      - "batch"
+    resources:
+      - "cronjobs"
+    verbs:
+      - "list"
+      - "patch"
+      - "get"
+      - "update"
+  - apiGroups:
+      - "scheduledscale.vandulmen.net"
+    resources:
+      - "*"
+    verbs:
+      - "*"

@@ -1,0 +1,33 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduledscale-controller
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{ template "scheduledscale.common-labels" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduledscale-controller
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: scheduledscale-controller
+    spec:
+      serviceAccountName: scheduledscale-controller
+      containers:
+        - image: "{{ $.Values.image.registry }}/{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          name: scheduledscale-controller
+          resources:
+            limits:
+              cpu: 250m
+              memory: 200Mi
+            requests:
+              cpu: 50m
+              memory: 50Mi
+      terminationGracePeriodSeconds: 5

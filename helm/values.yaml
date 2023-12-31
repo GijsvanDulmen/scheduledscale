@@ -1,0 +1,6 @@
+image:
+  registry: ghcr.io
+  repository: gijsvandulmen/scheduledscale
+  tag: 1.0
+
+  pullPolicy: Always

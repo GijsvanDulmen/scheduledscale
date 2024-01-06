@@ -15,7 +15,6 @@ spec:
       replicas: 2
 
       podDisruptionBudget:
-        enable: true
         minAvailable: 1
 
       annotations:

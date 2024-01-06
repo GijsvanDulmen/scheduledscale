@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-helm -n scheduledscale upgrade --install --create-namespace scheduledscale helm/
+helm -n scheduledscale install --create-namespace scheduledscale helm/

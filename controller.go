@@ -75,11 +75,5 @@ func main() {
 		log.Printf("number of cs watching: %d\n", len(csFromStore))
 
 		time.Sleep(300 * time.Second)
-
-		//for _, ds := range dsFromStore {
-		//	dsTyped := ds.(*v1alpha1.DeploymentScaling)
-		//	log.Println("reconcile ds for " + dsTyped.ObjectMeta.Namespace)
-		//	informer.ReconcileDeploymentScaling(dsTyped)
-		//}
 	}
 }

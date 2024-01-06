@@ -34,7 +34,6 @@ func (informer *Informer) WatchCronJobSuspend() cache.Store {
 				var ds = obj
 				typed := ds.(*cronjobsuspend.CronJobSuspend)
 				log.Printf("%s - added cronjob suspend for ", typed.ObjectMeta.Namespace)
-				log.Printf("%s", typed.Spec.CronJob.MatchLabels)
 
 				informer.ReconcileCronJobSuspend(typed)
 			},
@@ -118,8 +117,6 @@ func (informer *Informer) ReconcileCronJobSuspend(ds *cronjobsuspend.CronJobSusp
 						// do the standard patching
 						payloadBytes := informer.CreateCronJobSuspendPatch(&useThisStateAt)
 
-						log.Println(string(payloadBytes))
-
 						_, err := informer.coreClientSet.
 							BatchV1().CronJobs(ds.Namespace).
 							Patch(context.TODO(), useThisCronJob.Name, types.MergePatchType, payloadBytes, metav1.PatchOptions{})
@@ -142,8 +139,7 @@ func (informer *Informer) ReconcileCronJobSuspend(ds *cronjobsuspend.CronJobSusp
 									}
 
 									removePayload := informer.CreateRemovePatch(anKey, "/spec/jobTemplate/spec/template/metadata/annotations/%s")
-									log.Println(string(removePayload))
-
+									
 									_, err := informer.coreClientSet.
 										BatchV1().CronJobs(ds.Namespace).
 										Patch(context.TODO(), useThisCronJob.Name, types.JSONPatchType, removePayload, metav1.PatchOptions{})

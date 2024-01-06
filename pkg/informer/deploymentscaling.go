@@ -33,7 +33,6 @@ func (informer *Informer) WatchDeploymentScaling() cache.Store {
 				var ds = obj
 				dsTyped := ds.(*v1alpha12.DeploymentScaling)
 				log.Printf("%s - added scheduled deployment scaling for ", dsTyped.ObjectMeta.Namespace)
-				log.Printf("%s", dsTyped.Spec.Deployment.MatchLabels)
 
 				informer.ReconcileDeploymentScaling(dsTyped)
 			},
@@ -143,8 +142,6 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 									}
 
 									removePayload := informer.CreateRemovePatch(anKey, "/metadata/annotations/%s")
-
-									log.Println(string(removePayload))
 
 									_, err := informer.coreClientSet.
 										AppsV1().Deployments(ds.Namespace).

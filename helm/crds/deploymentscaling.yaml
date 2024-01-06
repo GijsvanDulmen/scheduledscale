@@ -14,6 +14,7 @@ spec:
           properties:
             spec:
               type: object
+              required: ["deployment", "scaleTo"]
               properties:
                 onDelete:
                   type: object
@@ -22,15 +23,20 @@ spec:
                       type: boolean
                 deployment:
                   type: object
+                  required: ["matchLabels"]
                   properties:
                     matchLabels:
                       additionalProperties:
                         type: string
                       type: object
                 scaleTo:
+                  x-kubernetes-validations:
+                    - rule: "size(self) >=1"
+                      message: "there should be at least one scaleTo"
                   type: array
                   items:
                     type: object
+                    required: ["at", "replicas"]
                     properties:
                       at:
                         type: string

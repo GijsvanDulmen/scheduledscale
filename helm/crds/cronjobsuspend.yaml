@@ -14,9 +14,11 @@ spec:
           properties:
             spec:
               type: object
+              required: ["cronjob", "stateAt"]
               properties:
                 cronjob:
                   type: object
+                  required: [ "matchLabels" ]
                   properties:
                     matchLabels:
                       additionalProperties:
@@ -24,8 +26,12 @@ spec:
                       type: object
                 stateAt:
                   type: array
+                  x-kubernetes-validations:
+                    - rule: "size(self) >=1"
+                      message: "there should be at least one stateAt"
                   items:
                     type: object
+                    required: ["at", "suspend"]
                     properties:
                       at:
                         type: string

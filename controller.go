@@ -63,9 +63,9 @@ func main() {
 		return
 	}
 
-	informer := informer.NewInformer(clientSet, coreClientSet, scheduler)
-	deploymentScalingStore := informer.WatchDeploymentScaling()
-	cronjobsuspendStore := informer.WatchCronJobSuspend()
+	newInformer := informer.NewInformer(clientSet, coreClientSet, scheduler)
+	deploymentScalingStore := newInformer.WatchDeploymentScaling()
+	cronjobsuspendStore := newInformer.WatchCronJobSuspend()
 
 	for {
 		dsFromStore := deploymentScalingStore.List()
@@ -74,6 +74,8 @@ func main() {
 		csFromStore := cronjobsuspendStore.List()
 		log.Printf("number of cs watching: %d\n", len(csFromStore))
 
-		time.Sleep(300 * time.Second)
+		log.Printf("number of cronjobs: %d\n", scheduler.GetCount())
+
+		time.Sleep(10 * time.Second)
 	}
 }

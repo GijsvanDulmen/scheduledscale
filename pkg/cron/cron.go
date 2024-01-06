@@ -32,17 +32,15 @@ func (cs *CronScheduler) RemoveForGroup(groupKey string) error {
 	return cs.RemoveForGroup(groupKey)
 }
 
-func (cs *CronScheduler) removeForGroup(groupKey string) error {
-	if jobs, ok := cs.jobDefinitions[groupKey]; ok {
-		for _, job := range jobs {
-			log.Printf("Removing job %s", job.ID())
-			err := cs.scheduler.RemoveJob(job.ID())
-			if err != nil {
-				return err
-			}
-		}
-	}
+func (cs *CronScheduler) GetCount() int {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
 
+	return len(cs.scheduler.Jobs())
+}
+
+func (cs *CronScheduler) removeForGroup(groupKey string) error {
+	cs.scheduler.RemoveByTags(groupKey)
 	cs.jobDefinitions[groupKey] = []gocron.Job{}
 	return nil
 }
@@ -62,7 +60,7 @@ func (cs *CronScheduler) ReplaceForGroup(groupKey string, handlers []AddFunc) er
 	}
 
 	for _, handler := range handlers {
-		job, err := cs.scheduler.NewJob(gocron.CronJob(handler.Cron, true), gocron.NewTask(handler.Handler))
+		job, err := cs.scheduler.NewJob(gocron.CronJob(handler.Cron, true), gocron.NewTask(handler.Handler), gocron.WithTags(groupKey))
 		if err != nil {
 			return err
 		}

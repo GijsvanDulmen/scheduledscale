@@ -2,6 +2,7 @@ package informer
 
 import (
 	"context"
+	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,6 +16,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 )
+
+func LogForDeploymentScaling(ds v1alpha12.DeploymentScaling, line string) {
+	log.Printf("ds %s/%s: %s", ds.Namespace, ds.Name, line)
+}
+
+func LogForDeploymentScalingScaleTo(ds v1alpha12.DeploymentScaling, scaleTo v1alpha12.ScaleTo, line string) {
+	LogForDeploymentScaling(ds, fmt.Sprintf("schedule %s: %s", scaleTo.At, line))
+}
 
 func (informer *Informer) WatchDeploymentScaling() cache.Store {
 	store, controller := cache.NewInformer(
@@ -31,23 +40,22 @@ func (informer *Informer) WatchDeploymentScaling() cache.Store {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				var ds = obj
-				dsTyped := ds.(*v1alpha12.DeploymentScaling)
-				log.Printf("%s - added scheduled deployment scaling for ", dsTyped.ObjectMeta.Namespace)
+				typed := ds.(*v1alpha12.DeploymentScaling)
+				LogForDeploymentScaling(*typed, "added")
 
-				informer.ReconcileDeploymentScaling(dsTyped)
+				informer.ReconcileDeploymentScaling(typed)
 			},
 			UpdateFunc: func(old, new interface{}) {
 				var ds = new
-				dsTyped := ds.(*v1alpha12.DeploymentScaling)
-				log.Printf("%s - reconciling updated scheduled deployment scaling for", dsTyped.ObjectMeta.Namespace)
+				typed := ds.(*v1alpha12.DeploymentScaling)
+				LogForDeploymentScaling(*typed, "updated")
 
-				informer.ReconcileDeploymentScaling(dsTyped)
+				informer.ReconcileDeploymentScaling(typed)
 			},
 			DeleteFunc: func(obj interface{}) {
 				var ds = obj
-				dsTyped := ds.(*v1alpha12.DeploymentScaling)
-				log.Printf("%s - deleted scheduled deployment scaling for", dsTyped.ObjectMeta.Namespace)
-
+				typed := ds.(*v1alpha12.DeploymentScaling)
+				LogForDeploymentScaling(*typed, "deleted")
 			},
 		},
 	)
@@ -59,15 +67,16 @@ func (informer *Informer) WatchDeploymentScaling() cache.Store {
 func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentScaling) {
 	keyForScheduler := "ds." + ds.Namespace + "." + ds.Name
 
-	log.Printf("Reconciling for DS %s", keyForScheduler)
+	LogForDeploymentScaling(*ds, "reconciling")
 
 	if ds.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(ds, finalizerName) {
-			log.Println("Adding finalizer")
+			LogForDeploymentScaling(*ds, "adding finalizer")
+
 			controllerutil.AddFinalizer(ds, finalizerName)
 			_, err := informer.clientSet.DeploymentScaling(ds.ObjectMeta.Namespace).Update(ds, metav1.UpdateOptions{})
 			if err != nil {
-				log.Println(err)
+				LogForDeploymentScaling(*ds, err.Error())
 			}
 			return
 		}
@@ -75,22 +84,25 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 		if controllerutil.ContainsFinalizer(ds, finalizerName) {
 			controllerutil.RemoveFinalizer(ds, finalizerName)
 
+			LogForDeploymentScaling(*ds, "removing finalizer")
+
 			err := informer.cronScheduler.RemoveForGroup(keyForScheduler)
 			if err != nil {
-				log.Println(err)
-				log.Println("Could not reconcile")
+				LogForDeploymentScaling(*ds, err.Error())
 				return
 			}
 
 			err = informer.DeletePodDisruptionBudgetsFor(ds)
 
 			if err != nil {
-				log.Println(err)
+				LogForDeploymentScaling(*ds, "could not delete poddisruptionbudget(s)")
+				LogForDeploymentScaling(*ds, err.Error())
 			}
 
 			_, err = informer.clientSet.DeploymentScaling(ds.ObjectMeta.Namespace).Update(ds, metav1.UpdateOptions{})
 			if err != nil {
-				log.Println(err)
+				LogForDeploymentScaling(*ds, "could not remove finalizer")
+				LogForDeploymentScaling(*ds, err.Error())
 			}
 		}
 		return
@@ -103,7 +115,7 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 
 		groupFuncs = append(groupFuncs, cron.AddFunc{
 			Handler: func() {
-				log.Printf("Scaling actions for %s and schedule %s", ds.Name, useThisScaleTo.At)
+				LogForDeploymentScalingScaleTo(*ds, useThisScaleTo, "executing")
 
 				listOptions := metav1.ListOptions{
 					LabelSelector: labels.Set(ds.Spec.Deployment.MatchLabels).String(),
@@ -112,12 +124,12 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 				deploymentList, err := informer.coreClientSet.AppsV1().Deployments(ds.Namespace).
 					List(context.TODO(), listOptions)
 				if err != nil {
-					log.Println(err.Error())
+					LogForDeploymentScalingScaleTo(*ds, useThisScaleTo, err.Error())
 				} else {
 					for _, deployment := range deploymentList.Items {
 						useThisDeployment := deployment
 
-						log.Printf("Updating deployment %s to %d replicas for %s in %s", useThisDeployment.Name, useThisScaleTo.Replicas, ds.Name, ds.Namespace)
+						LogForDeploymentScalingScaleTo(*ds, useThisScaleTo, fmt.Sprintf("Updating deployment %s to %d", useThisDeployment.Name, useThisScaleTo.Replicas))
 
 						payloadBytes := CreateDeploymentScalingPatch(&useThisScaleTo)
 
@@ -126,8 +138,8 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 							Patch(context.TODO(), useThisDeployment.Name, types.MergePatchType, payloadBytes, metav1.PatchOptions{})
 
 						if err != nil {
-							log.Printf("Patch deployment gone wrong for %s in %s", ds.Name, ds.Namespace)
-							log.Println(err.Error())
+							LogForDeploymentScalingScaleTo(*ds, useThisScaleTo, fmt.Sprintf("Patch deployment %s gone wrong", useThisDeployment.Name))
+							LogForDeploymentScalingScaleTo(*ds, useThisScaleTo, err.Error())
 							break
 						}
 
@@ -137,7 +149,7 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 								for _, anKey := range useThisScaleTo.Annotations.Remove {
 
 									if _, ok := useThisDeployment.Annotations[anKey]; !ok {
-										log.Printf("Deployment already has annotation %s for %s in %s", anKey, ds.Name, ds.Namespace)
+										LogForDeploymentScalingScaleTo(*ds, useThisScaleTo, fmt.Sprintf("Deployment %s already has annotation: %s", useThisDeployment.Name, anKey))
 										continue
 									}
 
@@ -148,8 +160,8 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 										Patch(context.TODO(), useThisDeployment.Name, types.JSONPatchType, removePayload, metav1.PatchOptions{})
 
 									if err != nil {
-										log.Printf("Remove annotations patch deployment gone wrong for %s in %s", ds.Name, ds.Namespace)
-										log.Println(err.Error())
+										LogForDeploymentScalingScaleTo(*ds, useThisScaleTo, fmt.Sprintf("Deployment %s removal of annotations gone wrong", useThisDeployment.Name))
+										LogForDeploymentScalingScaleTo(*ds, useThisScaleTo, err.Error())
 									}
 								}
 							}
@@ -165,7 +177,8 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 
 	err := informer.cronScheduler.ReplaceForGroup(keyForScheduler, groupFuncs)
 	if err != nil {
-		log.Println(err)
+		LogForDeploymentScaling(*ds, "scheduled jobs not being replaced")
+		LogForDeploymentScaling(*ds, err.Error())
 		return
 	}
 }

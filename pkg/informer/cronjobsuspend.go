@@ -11,10 +11,10 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"log"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/cronjobsuspend"
+	"scheduledscale/pkg/cron"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/cronjobsuspend"
-	"vandulmen.net/scheduledscale/pkg/cron"
 )
 
 func (informer *Informer) WatchCronJobSuspend() cache.Store {
@@ -115,7 +115,7 @@ func (informer *Informer) ReconcileCronJobSuspend(ds *cronjobsuspend.CronJobSusp
 						log.Printf("Updating cronjob %s to %t for %s in %s", useThisCronJob.Name, useThisStateAt.Suspend, ds.Name, ds.Namespace)
 
 						// do the standard patching
-						payloadBytes := informer.CreateCronJobSuspendPatch(&useThisStateAt)
+						payloadBytes := CreateCronJobSuspendPatch(&useThisStateAt)
 
 						_, err := informer.coreClientSet.
 							BatchV1().CronJobs(ds.Namespace).
@@ -138,8 +138,8 @@ func (informer *Informer) ReconcileCronJobSuspend(ds *cronjobsuspend.CronJobSusp
 										continue
 									}
 
-									removePayload := informer.CreateRemovePatch(anKey, "/spec/jobTemplate/spec/template/metadata/annotations/%s")
-									
+									removePayload := CreateRemovePatch(anKey, "/spec/jobTemplate/spec/template/metadata/annotations/%s")
+
 									_, err := informer.coreClientSet.
 										BatchV1().CronJobs(ds.Namespace).
 										Patch(context.TODO(), useThisCronJob.Name, types.JSONPatchType, removePayload, metav1.PatchOptions{})

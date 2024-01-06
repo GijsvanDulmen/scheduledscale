@@ -9,13 +9,17 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"log"
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
+	"scheduledscale/pkg/apis/scheduledscalecontroller"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
 )
+
+const ownerLabel = scheduledscalecontroller.GroupName + "/owner"
+const deploymentLabel = scheduledscalecontroller.GroupName + "/deployment"
 
 func (informer *Informer) DeletePodDisruptionBudgetsFor(ds *deploymentscaling.DeploymentScaling) error {
 	pdbListOptions := metav1.ListOptions{
 		LabelSelector: labels.Set(map[string]string{
-			"scheduledscale.vandulmen.net/owner": ds.Name,
+			ownerLabel: ds.Name,
 		}).String(),
 	}
 
@@ -37,14 +41,14 @@ func (informer *Informer) DeletePodDisruptionBudgetsFor(ds *deploymentscaling.De
 		}
 
 		if deletePdb {
-			log.Println("Deleting PDB %s for %s in %s", pdb.Name, ds.Name, ds.Namespace)
+			log.Printf("Deleting PDB %s for %s in %s\n", pdb.Name, ds.Name, ds.Namespace)
 			_ = informer.coreClientSet.PolicyV1().PodDisruptionBudgets(ds.Namespace).
 				Delete(context.TODO(), pdb.Name, metav1.DeleteOptions{})
 		} else {
-			log.Println("Removing owner and labels of PDB %s for %s in %s", pdb.Name, ds.Name, ds.Namespace)
+			log.Printf("Removing owner and labels of PDB %s for %s in %s", pdb.Name, ds.Name, ds.Namespace)
 			pdb.OwnerReferences = []metav1.OwnerReference{}
-			delete(pdb.Labels, "scheduledscale.vandulmen.net/deployment")
-			delete(pdb.Labels, "scheduledscale.vandulmen.net/owner")
+			delete(pdb.Labels, deploymentLabel)
+			delete(pdb.Labels, ownerLabel)
 
 			informer.coreClientSet.PolicyV1().PodDisruptionBudgets(ds.Namespace).
 				Update(context.TODO(), &pdb, metav1.UpdateOptions{})
@@ -57,7 +61,7 @@ func (informer *Informer) ReconcilePodDisruptionBudget(scaleTo *deploymentscalin
 	if scaleTo.PodDisruptionBudget != nil {
 		pdbListOptions := metav1.ListOptions{
 			LabelSelector: labels.Set(map[string]string{
-				"scheduledscale.vandulmen.net/deployment": deployment.Name,
+				deploymentLabel: deployment.Name,
 			}).String(),
 		}
 
@@ -100,6 +104,13 @@ func (informer *Informer) ReconcilePodDisruptionBudget(scaleTo *deploymentscalin
 }
 
 func (informer *Informer) CreatePodDisruptionBudgetFromDeploymentScaling(scaleTo *deploymentscaling.ScaleTo, ds *deploymentscaling.DeploymentScaling, deployment *v1.Deployment) (*pv1.PodDisruptionBudget, error) {
+	pdb := CreatePodDisruptionBudget(scaleTo, ds, deployment)
+
+	return informer.coreClientSet.PolicyV1().PodDisruptionBudgets(ds.Namespace).
+		Create(context.TODO(), &pdb, metav1.CreateOptions{})
+}
+
+func CreatePodDisruptionBudget(scaleTo *deploymentscaling.ScaleTo, ds *deploymentscaling.DeploymentScaling, deployment *v1.Deployment) pv1.PodDisruptionBudget {
 	pdbSpec := pv1.PodDisruptionBudgetSpec{
 		Selector: deployment.Spec.Selector,
 	}
@@ -127,14 +138,12 @@ func (informer *Informer) CreatePodDisruptionBudgetFromDeploymentScaling(scaleTo
 				},
 			},
 			Labels: map[string]string{
-				"scheduledscale.vandulmen.net/deployment": deployment.Name,
-				"scheduledscale.vandulmen.net/owner":      ds.Name,
+				deploymentLabel: deployment.Name,
+				ownerLabel:      ds.Name,
 			},
 			Annotations: make(map[string]string),
 		},
 		Spec: pdbSpec,
 	}
-
-	return informer.coreClientSet.PolicyV1().PodDisruptionBudgets(ds.Namespace).
-		Create(context.TODO(), &pdb, metav1.CreateOptions{})
+	return pdb
 }

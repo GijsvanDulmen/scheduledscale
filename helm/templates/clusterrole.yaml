@@ -31,7 +31,7 @@ rules:
       - "get"
       - "update"
   - apiGroups:
-      - "scheduledscale.vandulmen.net"
+      - "scheduledscale.io"
     resources:
       - "*"
     verbs:

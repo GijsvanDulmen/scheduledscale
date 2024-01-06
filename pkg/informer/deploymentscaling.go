@@ -10,10 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"log"
+	v1alpha12 "scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
+	"scheduledscale/pkg/cron"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
-	v1alpha12 "vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
-	"vandulmen.net/scheduledscale/pkg/cron"
 )
 
 func (informer *Informer) WatchDeploymentScaling() cache.Store {
@@ -119,7 +119,7 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 
 						log.Printf("Updating deployment %s to %d replicas for %s in %s", useThisDeployment.Name, useThisScaleTo.Replicas, ds.Name, ds.Namespace)
 
-						payloadBytes := informer.CreateDeploymentScalingPatch(&useThisScaleTo)
+						payloadBytes := CreateDeploymentScalingPatch(&useThisScaleTo)
 
 						_, err := informer.coreClientSet.
 							AppsV1().Deployments(ds.Namespace).
@@ -141,7 +141,7 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 										continue
 									}
 
-									removePayload := informer.CreateRemovePatch(anKey, "/metadata/annotations/%s")
+									removePayload := CreateRemovePatch(anKey, "/metadata/annotations/%s")
 
 									_, err := informer.coreClientSet.
 										AppsV1().Deployments(ds.Namespace).

@@ -1,5 +1,5 @@
 package scheduledscalecontroller
 
 const (
-	GroupName = "scheduledscale.vandulmen.net"
+	GroupName = "scheduledscale.io"
 )

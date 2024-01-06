@@ -1,7 +1,7 @@
 package deploymentscaling
 
 import (
-	runtime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func (in *DeploymentScaling) DeepCopyInto(out *DeploymentScaling) {

@@ -4,9 +4,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller"
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/cronjobsuspend"
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
+	"scheduledscale/pkg/apis/scheduledscalecontroller"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/cronjobsuspend"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
 )
 
 var SchemeGroupVersion = schema.GroupVersion{Group: scheduledscalecontroller.GroupName, Version: "v1alpha1"}

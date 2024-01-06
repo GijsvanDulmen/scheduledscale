@@ -2,7 +2,7 @@ package deploymentscaling
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/annotations"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/annotations"
 )
 
 type DeploymentScaling struct {

@@ -1,0 +1,22 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2
+  labels:
+    app: app2
+    scale-me: "true"
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: app2
+  template:
+    metadata:
+      labels:
+        app: app2
+    spec:
+      containers:
+        - name: busybox
+          image: busybox
+          command: [ "/bin/sh", "-ec", "sleep 9000" ]

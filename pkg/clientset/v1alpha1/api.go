@@ -4,9 +4,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller"
+	"scheduledscale/pkg/apis/scheduledscalecontroller"
 
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1"
 )
 
 type V1Alpha1Interface interface {

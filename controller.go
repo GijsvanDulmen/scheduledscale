@@ -4,12 +4,12 @@ import (
 	"flag"
 	"log"
 	"os"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1"
+	v1alpha12 "scheduledscale/pkg/clientset/v1alpha1"
+	"scheduledscale/pkg/cron"
 	"time"
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1"
-	v1alpha12 "vandulmen.net/scheduledscale/pkg/clientset/v1alpha1"
-	"vandulmen.net/scheduledscale/pkg/cron"
 
-	informer "vandulmen.net/scheduledscale/pkg/informer"
+	"scheduledscale/pkg/informer"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"

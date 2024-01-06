@@ -1,7 +1,7 @@
 package cronjobsuspend
 
 import (
-	runtime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func (in *CronJobSuspend) DeepCopyInto(out *CronJobSuspend) {

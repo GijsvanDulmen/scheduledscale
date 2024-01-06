@@ -3,9 +3,9 @@ package informer
 import (
 	"encoding/json"
 	"fmt"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/cronjobsuspend"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
 	"strings"
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/cronjobsuspend"
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
 )
 
 type patchUInt32Value struct {
@@ -14,7 +14,7 @@ type patchUInt32Value struct {
 	Value any    `json:"value,omitempty"`
 }
 
-func (informer *Informer) CreateRemovePatch(key string, path string) []byte {
+func CreateRemovePatch(key string, path string) []byte {
 	key = strings.ReplaceAll(key, "/", "~1")
 	payload := []patchUInt32Value{{
 		Op:   "remove",
@@ -25,7 +25,7 @@ func (informer *Informer) CreateRemovePatch(key string, path string) []byte {
 	return removePayload
 }
 
-func (informer *Informer) CreateDeploymentScalingPatch(scaleTo *deploymentscaling.ScaleTo) []byte {
+func CreateDeploymentScalingPatch(scaleTo *deploymentscaling.ScaleTo) []byte {
 	deploymentPatch := PatchForDeployment{
 		Spec: DeploymentSpec{
 			Replicas: uint32(scaleTo.Replicas),
@@ -47,7 +47,7 @@ func (informer *Informer) CreateDeploymentScalingPatch(scaleTo *deploymentscalin
 	return payloadBytes
 }
 
-func (informer *Informer) CreateCronJobSuspendPatch(stateAt *cronjobsuspend.StateAt) []byte {
+func CreateCronJobSuspendPatch(stateAt *cronjobsuspend.StateAt) []byte {
 	cronjobPatch := PatchForCronJob{
 		Spec: CronJobSpec{
 			Suspend: stateAt.Suspend,

@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"vandulmen.net/scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
 )
 
 const deploymentscalingsPlural = "deploymentscalings"

@@ -76,6 +76,6 @@ func main() {
 
 		log.Printf("number of cronjobs: %d\n", scheduler.GetCount())
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(300 * time.Second)
 	}
 }

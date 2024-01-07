@@ -94,7 +94,14 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 				return
 			}
 
-			err = informer.DeletePodDisruptionBudgetsFor(ds)
+			deletePdb := true
+			if ds.Spec.OnDelete != nil {
+				if ds.Spec.OnDelete.RemovePodDisruptionBudget != nil {
+					deletePdb = *ds.Spec.OnDelete.RemovePodDisruptionBudget
+				}
+			}
+
+			err = informer.DeletePodDisruptionBudgetsFor(ds, deletePdb)
 
 			if err != nil {
 				LogForDeploymentScaling(*ds, "could not delete poddisruptionbudget(s)", zerolog.ErrorLevel)

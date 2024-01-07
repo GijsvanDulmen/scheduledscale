@@ -16,12 +16,14 @@ import (
 const ownerLabel = scheduledscalecontroller.GroupName + "/owner"
 const deploymentLabel = scheduledscalecontroller.GroupName + "/deployment"
 
-func (informer *Informer) DeletePodDisruptionBudgetsFor(ds *deploymentscaling.DeploymentScaling) error {
+func (informer *Informer) DeletePodDisruptionBudgetsFor(ds *deploymentscaling.DeploymentScaling, deletePdb bool) error {
 	pdbListOptions := metav1.ListOptions{
 		LabelSelector: labels.Set(map[string]string{
 			ownerLabel: ds.Name,
 		}).String(),
 	}
+
+	log.Debug().Msg(pdbListOptions.LabelSelector)
 
 	pdbList, err := informer.coreClientSet.
 		PolicyV1().
@@ -32,26 +34,30 @@ func (informer *Informer) DeletePodDisruptionBudgetsFor(ds *deploymentscaling.De
 		return err
 	}
 
-	for _, pdb := range pdbList.Items {
-		deletePdb := true
-		if ds.Spec.OnDelete != nil {
-			if ds.Spec.OnDelete.RemovePodDisruptionBudget != nil {
-				deletePdb = *ds.Spec.OnDelete.RemovePodDisruptionBudget
-			}
-		}
+	log.Debug().Msgf("Received %d PDBs", len(pdbList.Items))
 
+	for _, pdb := range pdbList.Items {
 		if deletePdb {
 			log.Info().Msgf("Deleting PDB %s for %s in %s\n", pdb.Name, ds.Name, ds.Namespace)
-			_ = informer.coreClientSet.PolicyV1().PodDisruptionBudgets(ds.Namespace).
+			err = informer.coreClientSet.PolicyV1().PodDisruptionBudgets(ds.Namespace).
 				Delete(context.TODO(), pdb.Name, metav1.DeleteOptions{})
+			if err != nil {
+				log.Error().Msgf("Deleting PDB %s for %s in %s gone wrong\n", pdb.Name, ds.Name, ds.Namespace)
+				log.Error().Err(err)
+			}
 		} else {
 			log.Info().Msgf("Removing owner and labels of PDB %s for %s in %s", pdb.Name, ds.Name, ds.Namespace)
 			pdb.OwnerReferences = []metav1.OwnerReference{}
 			delete(pdb.Labels, deploymentLabel)
 			delete(pdb.Labels, ownerLabel)
 
-			informer.coreClientSet.PolicyV1().PodDisruptionBudgets(ds.Namespace).
+			_, err = informer.coreClientSet.PolicyV1().PodDisruptionBudgets(ds.Namespace).
 				Update(context.TODO(), &pdb, metav1.UpdateOptions{})
+
+			if err != nil {
+				log.Error().Msgf("Removing owner and labels of PDB %s for %s in %s gone wrong\n", pdb.Name, ds.Name, ds.Namespace)
+				log.Error().Err(err)
+			}
 		}
 	}
 	return nil
@@ -100,7 +106,7 @@ func (informer *Informer) ReconcilePodDisruptionBudget(scaleTo *deploymentscalin
 			}
 		} else {
 			LogForDeploymentScaling(*ds, fmt.Sprintf("Deleting pdb for %s in %s", ds.Name, ds.Namespace), zerolog.InfoLevel)
-			err := informer.DeletePodDisruptionBudgetsFor(ds)
+			err := informer.DeletePodDisruptionBudgetsFor(ds, true)
 			if err != nil {
 				log.Error().Msgf("Could not delete pdb for %s in %s", ds.Name, ds.Namespace)
 				log.Error().Err(err)

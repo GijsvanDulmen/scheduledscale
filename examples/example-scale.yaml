@@ -21,4 +21,12 @@ spec:
       annotations:
         add:
           "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
+    - at: "20 * * * * *"
+      replicas: 1
 
+      podDisruptionBudget:
+        enabled: false
+
+      annotations:
+        remove:
+          - "cluster-autoscaler.kubernetes.io/safe-to-evict"

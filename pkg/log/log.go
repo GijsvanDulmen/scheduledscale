@@ -16,5 +16,5 @@ func Logger() zerolog.Logger {
 		logger = logger.Level(zerolog.DebugLevel)
 	}
 
-	return logger.With().Timestamp().Caller().Logger()
+	return logger.With().Timestamp().Logger()
 }

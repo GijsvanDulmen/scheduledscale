@@ -1,0 +1,25 @@
+{{- range $index := until 40 }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: load-{{ $index }}
+  labels:
+    app: load-{{ $index }}
+    suspend-me: "true"
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: busybox
+              image: busybox
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+{{- end }}

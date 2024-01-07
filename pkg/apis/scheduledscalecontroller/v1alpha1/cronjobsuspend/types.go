@@ -2,7 +2,7 @@ package cronjobsuspend
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/annotations"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/common"
 )
 
 type CronJobSuspend struct {
@@ -14,18 +14,14 @@ type CronJobSuspend struct {
 }
 
 type CronJobSuspendSpec struct {
-	CronJob CronJobMatchLabels `json:"cronjob"`
+	CronJob common.MatchLabels `json:"cronjob"`
 	StateAt []StateAt          `json:"stateAt"`
 }
 
-type CronJobMatchLabels struct {
-	MatchLabels map[string]string `json:"matchLabels"`
-}
-
 type StateAt struct {
-	At          string                   `json:"at"`
-	Suspend     bool                     `json:"suspend"`
-	Annotations *annotations.Annotations `json:"annotations"`
+	At          string              `json:"at"`
+	Suspend     bool                `json:"suspend"`
+	Annotations *common.Annotations `json:"annotations"`
 }
 
 type CronJobSuspendStatus struct {

@@ -8,7 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"log"
 	"scheduledscale/pkg/apis/scheduledscalecontroller"
 	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
 )
@@ -41,11 +40,11 @@ func (informer *Informer) DeletePodDisruptionBudgetsFor(ds *deploymentscaling.De
 		}
 
 		if deletePdb {
-			log.Printf("Deleting PDB %s for %s in %s\n", pdb.Name, ds.Name, ds.Namespace)
+			log.Info().Msgf("Deleting PDB %s for %s in %s\n", pdb.Name, ds.Name, ds.Namespace)
 			_ = informer.coreClientSet.PolicyV1().PodDisruptionBudgets(ds.Namespace).
 				Delete(context.TODO(), pdb.Name, metav1.DeleteOptions{})
 		} else {
-			log.Printf("Removing owner and labels of PDB %s for %s in %s", pdb.Name, ds.Name, ds.Namespace)
+			log.Info().Msgf("Removing owner and labels of PDB %s for %s in %s", pdb.Name, ds.Name, ds.Namespace)
 			pdb.OwnerReferences = []metav1.OwnerReference{}
 			delete(pdb.Labels, deploymentLabel)
 			delete(pdb.Labels, ownerLabel)
@@ -72,13 +71,13 @@ func (informer *Informer) ReconcilePodDisruptionBudget(scaleTo *deploymentscalin
 
 		if err != nil {
 			errorMessage := fmt.Sprintf("Could not list pdbs for %s in %s - not doing anything", ds.Name, ds.Namespace)
-			log.Println(errorMessage)
+			log.Error().Msg(errorMessage)
 			ds.Status.ErrorMessage = errorMessage
 			return
 		} else {
 			if len(pdbList.Items) > 1 {
 				errorMessage := fmt.Sprintf("Multiple pdbs found for %s in %s - not doing anything", ds.Name, ds.Namespace)
-				log.Println(errorMessage)
+				log.Error().Msg(errorMessage)
 				ds.Status.ErrorMessage = errorMessage
 				return
 			} else if len(pdbList.Items) > 0 {
@@ -86,7 +85,7 @@ func (informer *Informer) ReconcilePodDisruptionBudget(scaleTo *deploymentscalin
 					Delete(context.TODO(), pdbList.Items[0].Name, metav1.DeleteOptions{})
 				if err != nil {
 					errorMessage := fmt.Sprintf("Could not delete pdb for %s in %s", ds.Name, ds.Namespace)
-					log.Println(errorMessage)
+					log.Error().Msg(errorMessage)
 					ds.Status.ErrorMessage = errorMessage
 					return
 				}
@@ -96,7 +95,7 @@ func (informer *Informer) ReconcilePodDisruptionBudget(scaleTo *deploymentscalin
 		_, err = informer.CreatePodDisruptionBudgetFromDeploymentScaling(scaleTo, ds, deployment)
 		if err != nil {
 			errorMessage := fmt.Sprintf("Could not create pdb for %s in %s", ds.Name, ds.Namespace)
-			log.Println(errorMessage)
+			log.Error().Msg(errorMessage)
 			ds.Status.ErrorMessage = errorMessage
 			return
 		}
@@ -115,8 +114,8 @@ func CreatePodDisruptionBudget(scaleTo *deploymentscaling.ScaleTo, ds *deploymen
 		Selector: deployment.Spec.Selector,
 	}
 
-	if scaleTo.PodDisruptionBudget.MaxAvailable != nil {
-		maxUnavailable := intstr.FromInt32(*scaleTo.PodDisruptionBudget.MaxAvailable)
+	if scaleTo.PodDisruptionBudget.MaxUnavailable != nil {
+		maxUnavailable := intstr.FromInt32(*scaleTo.PodDisruptionBudget.MaxUnavailable)
 		pdbSpec.MaxUnavailable = &maxUnavailable
 	}
 

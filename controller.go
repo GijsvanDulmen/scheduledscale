@@ -2,11 +2,11 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1"
 	v1alpha12 "scheduledscale/pkg/clientset/v1alpha1"
 	"scheduledscale/pkg/cron"
+	"scheduledscale/pkg/log"
 	"time"
 
 	"scheduledscale/pkg/informer"
@@ -25,15 +25,16 @@ func init() {
 }
 
 func main() {
+	logger := log.Logger()
 
 	var restConfig *rest.Config
 	var err error
 
 	if kubeconfig == "" {
-		log.Printf("using in-cluster configuration")
+		logger.Info().Msg("using in-cluster configuration")
 		restConfig, err = rest.InClusterConfig()
 	} else {
-		log.Printf("using configuration from '%s'", kubeconfig)
+		logger.Info().Msgf("using configuration from '%s'", kubeconfig)
 		restConfig, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 	}
 
@@ -50,7 +51,7 @@ func main() {
 
 	coreClientSet, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
-		log.Println(err)
+		logger.Error().Err(err)
 		os.Exit(3)
 		return
 	}
@@ -58,7 +59,7 @@ func main() {
 	scheduler, err := cron.NewCronScheduler()
 
 	if err != nil {
-		log.Println(err)
+		logger.Error().Err(err)
 		os.Exit(3)
 		return
 	}
@@ -66,15 +67,19 @@ func main() {
 	newInformer := informer.NewInformer(clientSet, coreClientSet, scheduler)
 	deploymentScalingStore := newInformer.WatchDeploymentScaling()
 	cronjobsuspendStore := newInformer.WatchCronJobSuspend()
+	hpaStore := newInformer.WatchHpaScaling()
 
 	for {
 		dsFromStore := deploymentScalingStore.List()
-		log.Printf("number of ds watching: %d\n", len(dsFromStore))
+		logger.Info().Msgf("number of ds watching: %d\n", len(dsFromStore))
 
 		csFromStore := cronjobsuspendStore.List()
-		log.Printf("number of cs watching: %d\n", len(csFromStore))
+		logger.Info().Msgf("number of cs watching: %d\n", len(csFromStore))
 
-		log.Printf("number of cronjobs: %d\n", scheduler.GetCount())
+		hsFromStore := hpaStore.List()
+		logger.Info().Msgf("number of hs watching: %d\n", len(hsFromStore))
+
+		logger.Info().Msgf("number of cronjobs: %d\n", scheduler.GetCount())
 
 		time.Sleep(300 * time.Second)
 	}

@@ -11,14 +11,14 @@ import (
 
 func TestCreatePodDisruptionBudget(t *testing.T) {
 	minAvailable := int32(2)
-	maxAvailable := int32(3)
+	MaxUnavailable := int32(3)
 
 	st := deploymentscaling.ScaleTo{
 		At:       "",
 		Replicas: 2,
 		PodDisruptionBudget: &deploymentscaling.PodDisruptionBudgetEnable{
-			MinAvailable: &minAvailable,
-			MaxAvailable: &maxAvailable,
+			MinAvailable:   &minAvailable,
+			MaxUnavailable: &MaxUnavailable,
 		},
 		Annotations: nil,
 	}

@@ -2,7 +2,6 @@ package informer
 
 import (
 	"github.com/stretchr/testify/assert"
-	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/annotations"
 	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/cronjobsuspend"
 	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
 	"testing"
@@ -35,7 +34,7 @@ func TestCreateDeploymentScalingPatchWithAnnotations(t *testing.T) {
 		At:                  "* * * * *",
 		Replicas:            1,
 		PodDisruptionBudget: nil,
-		Annotations: &annotations.Annotations{
+		Annotations: &common.Annotations{
 			Add: map[string]string{
 				"a": "b",
 				"c": "d",
@@ -63,7 +62,7 @@ func TestCreateCronJobSuspendPatchWithAnnotations(t *testing.T) {
 	st := cronjobsuspend.StateAt{
 		At:      "",
 		Suspend: true,
-		Annotations: &annotations.Annotations{
+		Annotations: &common.Annotations{
 			Add: map[string]string{
 				"a": "b",
 				"c": "d",

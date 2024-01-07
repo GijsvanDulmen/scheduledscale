@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-helm -n scheduledscale install --create-namespace scheduledscale helm/
+helm -n scheduledscale install --set LOG_LEVEL=DEBUG --create-namespace scheduledscale helm/

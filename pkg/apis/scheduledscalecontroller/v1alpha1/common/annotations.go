@@ -1,4 +1,4 @@
-package annotations
+package common
 
 type Annotations struct {
 	Add    map[string]string `json:"add"`

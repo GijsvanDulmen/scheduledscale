@@ -1,7 +1,7 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: deploymentscalings.scheduledscale.io
+  name: horizontalpodautoscalerscalings.scheduledscale.io
 spec:
   group: scheduledscale.io
   versions:
@@ -14,14 +14,9 @@ spec:
           properties:
             spec:
               type: object
-              required: ["deployment", "scaleTo"]
+              required: ["horizontalPodAutoscaler", "scaleTo"]
               properties:
-                onDelete:
-                  type: object
-                  properties:
-                    removePodDisruptionBudget:
-                      type: boolean
-                deployment:
+                horizontalPodAutoscaler:
                   type: object
                   required: ["matchLabels"]
                   properties:
@@ -36,27 +31,16 @@ spec:
                   type: array
                   items:
                     type: object
-                    required: ["at", "replicas"]
+                    required: ["at"]
                     properties:
                       at:
                         type: string
-                      replicas:
+                      minReplicas:
                         type: integer
                         minimum: 0
-                      podDisruptionBudget:
-                        type: object
-                        oneOf:
-                          - properties:
-                            required: [ "minAvailable" ]
-                          - properties:
-                            required: [ "maxUnavailable" ]
-                        properties:
-                          minAvailable:
-                            type: integer
-                            minimum: 1
-                          maxUnavailable:
-                            type: integer
-                            minimum: 1
+                      maxReplicas:
+                        type: integer
+                        minimum: 0
                       annotations:
                         type: object
                         properties:
@@ -75,6 +59,6 @@ spec:
                 errorMessage:
                   type: string
   names:
-    kind: DeploymentScaling
-    plural: deploymentscalings
+    kind: HorizontalPodAutoscalerScaling
+    plural: horizontalpodautoscalerscalings
   scope: Namespaced

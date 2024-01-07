@@ -2,9 +2,11 @@ package cron
 
 import (
 	"github.com/go-co-op/gocron/v2"
-	"log"
+	logger "scheduledscale/pkg/log"
 	"sync"
 )
+
+var log = logger.Logger()
 
 type CronScheduler struct {
 	scheduler      gocron.Scheduler
@@ -29,7 +31,7 @@ func (cs *CronScheduler) RemoveForGroup(groupKey string) error {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 
-	return cs.RemoveForGroup(groupKey)
+	return cs.removeForGroup(groupKey)
 }
 
 func (cs *CronScheduler) GetCount() int {
@@ -66,8 +68,8 @@ func (cs *CronScheduler) ReplaceForGroup(groupKey string, handlers []AddFunc) er
 		}
 		cs.jobDefinitions[groupKey] = append(cs.jobDefinitions[groupKey], job)
 
-		log.Printf("Added job %s", job.ID())
-		log.Printf("Jobs for %s are %d", groupKey, len(cs.jobDefinitions[groupKey]))
+		log.Debug().Msgf("Added job %s", job.ID())
+		log.Debug().Msgf("Jobs for %s are %d", groupKey, len(cs.jobDefinitions[groupKey]))
 	}
 
 	return nil

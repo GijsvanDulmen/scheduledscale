@@ -33,3 +33,13 @@ type PatchForDeployment struct {
 type DeploymentSpec struct {
 	Replicas uint32 `json:"replicas"`
 }
+
+type PatchForHpa struct {
+	Spec     HpaSpec             `json:"spec"`
+	Metadata MetaDataAnnotations `json:"metadata"`
+}
+
+type HpaSpec struct {
+	MinReplicas *uint32 `json:"minReplicas"`
+	MaxReplicas *uint32 `json:"maxReplicas"`
+}

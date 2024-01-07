@@ -2,7 +2,7 @@ package deploymentscaling
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/annotations"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/common"
 )
 
 type DeploymentScaling struct {
@@ -14,29 +14,25 @@ type DeploymentScaling struct {
 }
 
 type DeploymentScalingSpec struct {
-	Deployment DeploymentMatchLabels `json:"deployment"`
-	ScaleTo    []ScaleTo             `json:"scaleTo"`
-	OnDelete   *OnDelete             `json:"onDelete"`
+	Deployment common.MatchLabels `json:"deployment"`
+	ScaleTo    []ScaleTo          `json:"scaleTo"`
+	OnDelete   *OnDelete          `json:"onDelete"`
 }
 
 type OnDelete struct {
 	RemovePodDisruptionBudget *bool `json:"removePodDisruptionBudget"`
 }
 
-type DeploymentMatchLabels struct {
-	MatchLabels map[string]string `json:"matchLabels"`
-}
-
 type ScaleTo struct {
 	At                  string                     `json:"at"`
 	Replicas            int32                      `json:"replicas"`
 	PodDisruptionBudget *PodDisruptionBudgetEnable `json:"podDisruptionBudget,omitempty"`
-	Annotations         *annotations.Annotations   `json:"annotations"`
+	Annotations         *common.Annotations        `json:"annotations"`
 }
 
 type PodDisruptionBudgetEnable struct {
-	MinAvailable *int32 `json:"minAvailable"`
-	MaxAvailable *int32 `json:"maxAvailable"`
+	MinAvailable   *int32 `json:"minAvailable"`
+	MaxUnavailable *int32 `json:"maxUnavailable"`
 }
 
 type DeploymentScalingStatus struct {

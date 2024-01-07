@@ -23,6 +23,9 @@ spec:
         - image: "{{ $.Values.image.registry }}/{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           name: scheduledscale-controller
+          env:
+            - name: LOG_LEVEL
+              value: "{{ $.Values.logLevel }}"
           resources:
             limits:
               cpu: 250m

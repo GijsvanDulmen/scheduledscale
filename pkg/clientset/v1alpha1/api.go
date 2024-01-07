@@ -12,6 +12,7 @@ import (
 type V1Alpha1Interface interface {
 	DeploymentScaling(namespace string) DeploymentScalingInterface
 	CronJobSuspend(namespace string) CronJobSuspendInterface
+	HorizontalPodAutoscalerScaling(namespace string) HorizontalPodAutoscalerScalingInterface
 }
 
 type V1Alpha1Client struct {
@@ -42,6 +43,13 @@ func (c *V1Alpha1Client) DeploymentScaling(namespace string) DeploymentScalingIn
 
 func (c *V1Alpha1Client) CronJobSuspend(namespace string) CronJobSuspendInterface {
 	return &cronjobSuspendClient{
+		restClient: c.restClient,
+		ns:         namespace,
+	}
+}
+
+func (c *V1Alpha1Client) HorizontalPodAutoscalerScaling(namespace string) HorizontalPodAutoscalerScalingInterface {
+	return &hpaScalingClient{
 		restClient: c.restClient,
 		ns:         namespace,
 	}

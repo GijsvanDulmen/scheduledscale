@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/cronjobsuspend"
 	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
+	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/horizontalpodautoscalerscaling"
 	"strings"
 )
 
@@ -44,6 +45,29 @@ func CreateDeploymentScalingPatch(scaleTo *deploymentscaling.ScaleTo) []byte {
 	}
 
 	payloadBytes, _ := json.Marshal(deploymentPatch)
+	return payloadBytes
+}
+
+func CreateHpaPatch(scaleTo *horizontalpodautoscalerscaling.ScaleTo) []byte {
+	hpaPatch := PatchForHpa{
+		Spec: HpaSpec{
+			MinReplicas: scaleTo.MinReplicas,
+			MaxReplicas: scaleTo.MaxReplicas,
+		},
+		Metadata: MetaDataAnnotations{
+			Annotations: map[string]string{},
+		},
+	}
+
+	if scaleTo.Annotations != nil {
+		if scaleTo.Annotations.Add != nil {
+			for anKey, anValue := range scaleTo.Annotations.Add {
+				hpaPatch.Metadata.Annotations[anKey] = anValue
+			}
+		}
+	}
+
+	payloadBytes, _ := json.Marshal(hpaPatch)
 	return payloadBytes
 }
 

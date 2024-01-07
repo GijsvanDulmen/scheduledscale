@@ -1,0 +1,28 @@
+apiVersion: scheduledscale.io/v1alpha1
+kind: HorizontalPodAutoscalerScaling
+metadata:
+  name: hpa-me
+spec:
+  horizontalPodAutoscaler:
+    matchLabels:
+      hpa-me: "true"
+  scaleTo:
+    - at: "20 * * * * *"
+      minReplicas: 1
+      maxReplicas: 5
+
+      annotations:
+        remove:
+          - "cluster-autoscaler.kubernetes.io/safe-to-evict"
+    - at: "30 * * * * *"
+      minReplicas: 1
+      maxReplicas: 1
+
+      annotations:
+        add:
+          "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
+    - at: "40 * * * * *"
+      minReplicas: 2
+      maxReplicas: 5
+
+

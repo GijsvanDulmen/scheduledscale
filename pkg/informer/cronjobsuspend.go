@@ -3,6 +3,7 @@ package informer
 import (
 	"context"
 	"fmt"
+	"github.com/rs/zerolog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -10,19 +11,21 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
-	"log"
 	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/cronjobsuspend"
 	"scheduledscale/pkg/cron"
+	logger "scheduledscale/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 )
 
-func LogForCronJobSuspend(suspend cronjobsuspend.CronJobSuspend, line string) {
-	log.Printf("cs %s/%s: %s", suspend.Namespace, suspend.Name, line)
+var log = logger.Logger()
+
+func LogForCronJobSuspend(suspend cronjobsuspend.CronJobSuspend, line string, level zerolog.Level) {
+	log.WithLevel(level).Msgf("cs %s/%s: %s", suspend.Namespace, suspend.Name, line)
 }
 
-func LogForCronJobSuspendState(suspend cronjobsuspend.CronJobSuspend, stateAt cronjobsuspend.StateAt, line string) {
-	LogForCronJobSuspend(suspend, fmt.Sprintf("schedule %s: %s", stateAt.At, line))
+func LogForCronJobSuspendState(suspend cronjobsuspend.CronJobSuspend, stateAt cronjobsuspend.StateAt, line string, level zerolog.Level) {
+	LogForCronJobSuspend(suspend, fmt.Sprintf("schedule %s: %s", stateAt.At, line), level)
 }
 
 func (informer *Informer) WatchCronJobSuspend() cache.Store {
@@ -41,20 +44,20 @@ func (informer *Informer) WatchCronJobSuspend() cache.Store {
 			AddFunc: func(obj interface{}) {
 				var cs = obj
 				typed := cs.(*cronjobsuspend.CronJobSuspend)
-				LogForCronJobSuspend(*typed, "added")
+				LogForCronJobSuspend(*typed, "added", zerolog.DebugLevel)
 				informer.ReconcileCronJobSuspend(typed)
 			},
 			UpdateFunc: func(old, new interface{}) {
 				var cs = new
 				typed := cs.(*cronjobsuspend.CronJobSuspend)
-				LogForCronJobSuspend(*typed, "updated")
+				LogForCronJobSuspend(*typed, "updated", zerolog.DebugLevel)
 
 				informer.ReconcileCronJobSuspend(typed)
 			},
 			DeleteFunc: func(obj interface{}) {
 				var cs = obj
 				typed := cs.(*cronjobsuspend.CronJobSuspend)
-				LogForCronJobSuspend(*typed, "deleted")
+				LogForCronJobSuspend(*typed, "deleted", zerolog.DebugLevel)
 			},
 		},
 	)
@@ -66,15 +69,15 @@ func (informer *Informer) WatchCronJobSuspend() cache.Store {
 func (informer *Informer) ReconcileCronJobSuspend(cs *cronjobsuspend.CronJobSuspend) {
 	keyForScheduler := "cs." + cs.Namespace + "." + cs.Name
 
-	LogForCronJobSuspend(*cs, "reconciling")
+	LogForCronJobSuspend(*cs, "reconciling", zerolog.InfoLevel)
 
 	if cs.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(cs, finalizerName) {
-			LogForCronJobSuspend(*cs, "adding finalizer")
+			LogForCronJobSuspend(*cs, "adding finalizer", zerolog.DebugLevel)
 			controllerutil.AddFinalizer(cs, finalizerName)
 			_, err := informer.clientSet.CronJobSuspend(cs.ObjectMeta.Namespace).Update(cs, metav1.UpdateOptions{})
 			if err != nil {
-				LogForCronJobSuspend(*cs, err.Error())
+				LogForCronJobSuspend(*cs, err.Error(), zerolog.ErrorLevel)
 			}
 			return
 		}
@@ -82,18 +85,18 @@ func (informer *Informer) ReconcileCronJobSuspend(cs *cronjobsuspend.CronJobSusp
 		if controllerutil.ContainsFinalizer(cs, finalizerName) {
 			controllerutil.RemoveFinalizer(cs, finalizerName)
 
-			LogForCronJobSuspend(*cs, "removing finalizer")
+			LogForCronJobSuspend(*cs, "removing finalizer", zerolog.DebugLevel)
 
 			err := informer.cronScheduler.RemoveForGroup(keyForScheduler)
 			if err != nil {
-				LogForCronJobSuspend(*cs, err.Error())
+				LogForCronJobSuspend(*cs, err.Error(), zerolog.ErrorLevel)
 				return
 			}
 
 			_, err = informer.clientSet.CronJobSuspend(cs.ObjectMeta.Namespace).Update(cs, metav1.UpdateOptions{})
 			if err != nil {
-				LogForCronJobSuspend(*cs, "could not remove finalizer")
-				LogForCronJobSuspend(*cs, err.Error())
+				LogForCronJobSuspend(*cs, "could not remove finalizer", zerolog.ErrorLevel)
+				LogForCronJobSuspend(*cs, err.Error(), zerolog.ErrorLevel)
 			}
 		}
 		return
@@ -106,7 +109,7 @@ func (informer *Informer) ReconcileCronJobSuspend(cs *cronjobsuspend.CronJobSusp
 
 		groupFuncs = append(groupFuncs, cron.AddFunc{
 			Handler: func() {
-				LogForCronJobSuspendState(*cs, useThisStateAt, "executing")
+				LogForCronJobSuspendState(*cs, useThisStateAt, "executing", zerolog.InfoLevel)
 
 				listOptions := metav1.ListOptions{
 					LabelSelector: labels.Set(cs.Spec.CronJob.MatchLabels).String(),
@@ -115,14 +118,14 @@ func (informer *Informer) ReconcileCronJobSuspend(cs *cronjobsuspend.CronJobSusp
 				cronjobList, err := informer.coreClientSet.BatchV1().CronJobs(cs.Namespace).
 					List(context.TODO(), listOptions)
 				if err != nil {
-					LogForCronJobSuspendState(*cs, useThisStateAt, err.Error())
+					LogForCronJobSuspendState(*cs, useThisStateAt, err.Error(), zerolog.ErrorLevel)
 				} else {
-					LogForCronJobSuspendState(*cs, useThisStateAt, fmt.Sprintf("got %d cronjobs", len(cronjobList.Items)))
+					LogForCronJobSuspendState(*cs, useThisStateAt, fmt.Sprintf("got %d cronjobs", len(cronjobList.Items)), zerolog.InfoLevel)
 
 					for _, cronjob := range cronjobList.Items {
 						useThisCronJob := cronjob
 
-						LogForCronJobSuspendState(*cs, useThisStateAt, fmt.Sprintf("Updating cronjob %s to %t", useThisCronJob.Name, useThisStateAt.Suspend))
+						LogForCronJobSuspendState(*cs, useThisStateAt, fmt.Sprintf("Updating cronjob %s to %t", useThisCronJob.Name, useThisStateAt.Suspend), zerolog.InfoLevel)
 
 						// do the standard patching
 						payloadBytes := CreateCronJobSuspendPatch(&useThisStateAt)
@@ -132,8 +135,8 @@ func (informer *Informer) ReconcileCronJobSuspend(cs *cronjobsuspend.CronJobSusp
 							Patch(context.TODO(), useThisCronJob.Name, types.MergePatchType, payloadBytes, metav1.PatchOptions{})
 
 						if err != nil {
-							LogForCronJobSuspendState(*cs, useThisStateAt, fmt.Sprintf("Patch cronjob %s gone wrong", useThisCronJob.Name))
-							LogForCronJobSuspendState(*cs, useThisStateAt, err.Error())
+							LogForCronJobSuspendState(*cs, useThisStateAt, fmt.Sprintf("Patch cronjob %s gone wrong", useThisCronJob.Name), zerolog.ErrorLevel)
+							LogForCronJobSuspendState(*cs, useThisStateAt, err.Error(), zerolog.ErrorLevel)
 							break
 						}
 
@@ -143,7 +146,7 @@ func (informer *Informer) ReconcileCronJobSuspend(cs *cronjobsuspend.CronJobSusp
 								for _, anKey := range useThisStateAt.Annotations.Remove {
 
 									if _, ok := useThisCronJob.Spec.JobTemplate.Spec.Template.Annotations[anKey]; !ok {
-										LogForCronJobSuspendState(*cs, useThisStateAt, fmt.Sprintf("Cronjob %s already has annotation: %s", useThisCronJob.Name, anKey))
+										LogForCronJobSuspendState(*cs, useThisStateAt, fmt.Sprintf("Cronjob %s already has annotation: %s", useThisCronJob.Name, anKey), zerolog.DebugLevel)
 										continue
 									}
 
@@ -154,8 +157,8 @@ func (informer *Informer) ReconcileCronJobSuspend(cs *cronjobsuspend.CronJobSusp
 										Patch(context.TODO(), useThisCronJob.Name, types.JSONPatchType, removePayload, metav1.PatchOptions{})
 
 									if err != nil {
-										LogForCronJobSuspendState(*cs, useThisStateAt, fmt.Sprintf("Cronjob %s removal of annotations gone wrong", useThisCronJob.Name))
-										LogForCronJobSuspendState(*cs, useThisStateAt, err.Error())
+										LogForCronJobSuspendState(*cs, useThisStateAt, fmt.Sprintf("Cronjob %s removal of annotations gone wrong", useThisCronJob.Name), zerolog.ErrorLevel)
+										LogForCronJobSuspendState(*cs, useThisStateAt, err.Error(), zerolog.ErrorLevel)
 									}
 								}
 							}
@@ -169,8 +172,8 @@ func (informer *Informer) ReconcileCronJobSuspend(cs *cronjobsuspend.CronJobSusp
 
 	err := informer.cronScheduler.ReplaceForGroup(keyForScheduler, groupFuncs)
 	if err != nil {
-		LogForCronJobSuspend(*cs, "scheduled jobs not being replaced")
-		LogForCronJobSuspend(*cs, err.Error())
+		LogForCronJobSuspend(*cs, "scheduled jobs not being replaced", zerolog.ErrorLevel)
+		LogForCronJobSuspend(*cs, err.Error(), zerolog.ErrorLevel)
 		return
 	}
 }

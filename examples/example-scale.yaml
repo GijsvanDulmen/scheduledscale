@@ -4,14 +4,14 @@ metadata:
   name: scale-up
 spec:
   onDelete:
-    removePodDisruptionBudget: false # will only
+    removePodDisruptionBudget: true # will only
 
   deployment:
     matchLabels:
       scale-me: "true"
   scaleTo:
     # crontab: minute / hour / day / month / day week
-    - at: "10 * * * * *"
+    - at: "10,25,40 * * * * *"
       replicas: 2
 
       podDisruptionBudget:
@@ -21,7 +21,7 @@ spec:
       annotations:
         add:
           "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
-    - at: "20 * * * * *"
+    - at: "15,30,45 * * * * *"
       replicas: 1
 
       podDisruptionBudget:
@@ -30,3 +30,5 @@ spec:
       annotations:
         remove:
           - "cluster-autoscaler.kubernetes.io/safe-to-evict"
+    - at: "20,35,50 * * * * *"
+      replicas: 0

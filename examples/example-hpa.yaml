@@ -7,21 +7,21 @@ spec:
     matchLabels:
       hpa-me: "true"
   scaleTo:
-    - at: "20 * * * * *"
+    - at: "10,25,40,55 * * * * *"
       minReplicas: 1
       maxReplicas: 5
 
       annotations:
         remove:
           - "cluster-autoscaler.kubernetes.io/safe-to-evict"
-    - at: "30 * * * * *"
+    - at: "15,30,45,0 * * * * *"
       minReplicas: 1
       maxReplicas: 1
 
       annotations:
         add:
           "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
-    - at: "40 * * * * *"
+    - at: "20,35,50 * * * * *"
       minReplicas: 2
       maxReplicas: 5
 

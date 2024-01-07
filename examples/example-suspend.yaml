@@ -8,45 +8,16 @@ spec:
       suspend-me: "true"
   stateAt:
     # crontab: minute / hour / day / month / day week
-    - at: "50 * * * * *"
+    - at: "5,15,25,35,45,55 * * * * *"
       suspend: true
 
       annotations:
         add:
           "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
 
-    - at: "10 * * * * *"
+    - at: "10,20,30,40,50,0 * * * * *"
       suspend: false
 
       annotations:
         remove:
           - "cluster-autoscaler.kubernetes.io/safe-to-evict"
-
-    - at: "20 * * * * *"
-      suspend: true
-
-      annotations:
-        add:
-          "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
-
-    - at: "30 * * * * *"
-      suspend: false
-
-      annotations:
-        remove:
-          - "cluster-autoscaler.kubernetes.io/safe-to-evict"
-
-    - at: "35 * * * * *"
-      suspend: true
-
-      annotations:
-        add:
-          "cluster-autoscaler.kubernetes.io/safe-to-evict": "false"
-
-    - at: "40 * * * * *"
-      suspend: false
-
-      annotations:
-        remove:
-          - "cluster-autoscaler.kubernetes.io/safe-to-evict"
-

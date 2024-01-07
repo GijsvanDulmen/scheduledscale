@@ -16,6 +16,11 @@ spec:
               type: object
               required: ["horizontalPodAutoscaler", "scaleTo"]
               properties:
+                onDelete:
+                  type: object
+                  properties:
+                    removePodDisruptionBudget:
+                      type: boolean
                 horizontalPodAutoscaler:
                   type: object
                   required: ["matchLabels"]
@@ -41,6 +46,20 @@ spec:
                       maxReplicas:
                         type: integer
                         minimum: 0
+                      podDisruptionBudget:
+                        type: object
+                        oneOf:
+                          - properties:
+                            required: [ "minAvailable" ]
+                          - properties:
+                            required: [ "maxUnavailable" ]
+                        properties:
+                          minAvailable:
+                            type: integer
+                            minimum: 1
+                          maxUnavailable:
+                            type: integer
+                            minimum: 1
                       annotations:
                         type: object
                         properties:
@@ -56,8 +75,8 @@ spec:
             status:
               type: object
               properties:
-                errorMessage:
-                  type: string
+                registered:
+                  type: boolean
   names:
     kind: HorizontalPodAutoscalerScaling
     plural: horizontalpodautoscalerscalings

@@ -51,8 +51,8 @@ spec:
             status:
               type: object
               properties:
-                errorMessage:
-                  type: string
+                registered:
+                  type: boolean
   names:
     kind: CronJobSuspend
     plural: cronjobsuspends

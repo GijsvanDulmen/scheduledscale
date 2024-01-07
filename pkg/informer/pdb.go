@@ -3,6 +3,7 @@ package informer
 import (
 	"context"
 	"fmt"
+	"github.com/rs/zerolog"
 	v1 "k8s.io/api/apps/v1"
 	pv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,46 +59,53 @@ func (informer *Informer) DeletePodDisruptionBudgetsFor(ds *deploymentscaling.De
 
 func (informer *Informer) ReconcilePodDisruptionBudget(scaleTo *deploymentscaling.ScaleTo, ds *deploymentscaling.DeploymentScaling, deployment *v1.Deployment) {
 	if scaleTo.PodDisruptionBudget != nil {
-		pdbListOptions := metav1.ListOptions{
-			LabelSelector: labels.Set(map[string]string{
-				deploymentLabel: deployment.Name,
-			}).String(),
-		}
+		pdb := *scaleTo.PodDisruptionBudget
+		if pdb.Enabled {
+			pdbListOptions := metav1.ListOptions{
+				LabelSelector: labels.Set(map[string]string{
+					deploymentLabel: deployment.Name,
+				}).String(),
+			}
 
-		pdbList, err := informer.coreClientSet.
-			PolicyV1().
-			PodDisruptionBudgets(ds.Namespace).
-			List(context.TODO(), pdbListOptions)
+			pdbList, err := informer.coreClientSet.
+				PolicyV1().
+				PodDisruptionBudgets(ds.Namespace).
+				List(context.TODO(), pdbListOptions)
 
-		if err != nil {
-			errorMessage := fmt.Sprintf("Could not list pdbs for %s in %s - not doing anything", ds.Name, ds.Namespace)
-			log.Error().Msg(errorMessage)
-			ds.Status.ErrorMessage = errorMessage
-			return
-		} else {
-			if len(pdbList.Items) > 1 {
-				errorMessage := fmt.Sprintf("Multiple pdbs found for %s in %s - not doing anything", ds.Name, ds.Namespace)
-				log.Error().Msg(errorMessage)
-				ds.Status.ErrorMessage = errorMessage
+			if err != nil {
+				log.Error().Msgf("Could not list pdbs for %s in %s - not doing anything", ds.Name, ds.Namespace)
+				log.Error().Err(err)
 				return
-			} else if len(pdbList.Items) > 0 {
-				err := informer.coreClientSet.PolicyV1().PodDisruptionBudgets(ds.Namespace).
-					Delete(context.TODO(), pdbList.Items[0].Name, metav1.DeleteOptions{})
-				if err != nil {
-					errorMessage := fmt.Sprintf("Could not delete pdb for %s in %s", ds.Name, ds.Namespace)
+			} else {
+				if len(pdbList.Items) > 1 {
+					errorMessage := fmt.Sprintf("Multiple pdbs found for %s in %s - not doing anything", ds.Name, ds.Namespace)
 					log.Error().Msg(errorMessage)
-					ds.Status.ErrorMessage = errorMessage
 					return
+				} else if len(pdbList.Items) > 0 {
+					err = informer.coreClientSet.PolicyV1().PodDisruptionBudgets(ds.Namespace).
+						Delete(context.TODO(), pdbList.Items[0].Name, metav1.DeleteOptions{})
+					if err != nil {
+						log.Error().Msgf("Could not delete pdb for %s in %s", ds.Name, ds.Namespace)
+						return
+					}
 				}
 			}
-		}
 
-		_, err = informer.CreatePodDisruptionBudgetFromDeploymentScaling(scaleTo, ds, deployment)
-		if err != nil {
-			errorMessage := fmt.Sprintf("Could not create pdb for %s in %s", ds.Name, ds.Namespace)
-			log.Error().Msg(errorMessage)
-			ds.Status.ErrorMessage = errorMessage
-			return
+			LogForDeploymentScaling(*ds, fmt.Sprintf("Creating pdb for %s in %s", ds.Name, ds.Namespace), zerolog.InfoLevel)
+			_, err = informer.CreatePodDisruptionBudgetFromDeploymentScaling(scaleTo, ds, deployment)
+			if err != nil {
+				log.Error().Msgf("Could not create pdb for %s in %s", ds.Name, ds.Namespace)
+				log.Error().Err(err)
+				return
+			}
+		} else {
+			LogForDeploymentScaling(*ds, fmt.Sprintf("Deleting pdb for %s in %s", ds.Name, ds.Namespace), zerolog.InfoLevel)
+			err := informer.DeletePodDisruptionBudgetsFor(ds)
+			if err != nil {
+				log.Error().Msgf("Could not delete pdb for %s in %s", ds.Name, ds.Namespace)
+				log.Error().Err(err)
+				return
+			}
 		}
 	}
 }

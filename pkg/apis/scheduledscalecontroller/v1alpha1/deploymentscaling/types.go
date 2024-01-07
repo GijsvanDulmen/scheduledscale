@@ -9,34 +9,21 @@ type DeploymentScaling struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DeploymentScalingSpec   `json:"spec"`
-	Status DeploymentScalingStatus `json:"status"`
+	Spec   DeploymentScalingSpec `json:"spec"`
+	Status common.Status         `json:"status"`
 }
 
 type DeploymentScalingSpec struct {
-	Deployment common.MatchLabels `json:"deployment"`
-	ScaleTo    []ScaleTo          `json:"scaleTo"`
-	OnDelete   *OnDelete          `json:"onDelete"`
-}
-
-type OnDelete struct {
-	RemovePodDisruptionBudget *bool `json:"removePodDisruptionBudget"`
+	Deployment common.MatchLabels  `json:"deployment"`
+	ScaleTo    []ScaleTo           `json:"scaleTo"`
+	OnDelete   *common.PdbOnDelete `json:"onDelete"`
 }
 
 type ScaleTo struct {
-	At                  string                     `json:"at"`
-	Replicas            int32                      `json:"replicas"`
-	PodDisruptionBudget *PodDisruptionBudgetEnable `json:"podDisruptionBudget,omitempty"`
-	Annotations         *common.Annotations        `json:"annotations"`
-}
-
-type PodDisruptionBudgetEnable struct {
-	MinAvailable   *int32 `json:"minAvailable"`
-	MaxUnavailable *int32 `json:"maxUnavailable"`
-}
-
-type DeploymentScalingStatus struct {
-	ErrorMessage string `json:"errorMessage"`
+	At                  string                            `json:"at"`
+	Replicas            int32                             `json:"replicas"`
+	PodDisruptionBudget *common.PodDisruptionBudgetEnable `json:"podDisruptionBudget,omitempty"`
+	Annotations         *common.Annotations               `json:"annotations"`
 }
 
 type DeploymentScalingList struct {

@@ -73,6 +73,8 @@ func (informer *Informer) ReconcileDeploymentScaling(ds *v1alpha12.DeploymentSca
 		if !controllerutil.ContainsFinalizer(ds, finalizerName) {
 			LogForDeploymentScaling(*ds, "adding finalizer", zerolog.DebugLevel)
 
+			boolTrue := true
+			ds.Status.Registered = &boolTrue
 			controllerutil.AddFinalizer(ds, finalizerName)
 			_, err := informer.clientSet.DeploymentScaling(ds.ObjectMeta.Namespace).Update(ds, metav1.UpdateOptions{})
 			if err != nil {

@@ -75,6 +75,9 @@ func (informer *Informer) ReconcileCronJobSuspend(cs *cronjobsuspend.CronJobSusp
 		if !controllerutil.ContainsFinalizer(cs, finalizerName) {
 			LogForCronJobSuspend(*cs, "adding finalizer", zerolog.DebugLevel)
 			controllerutil.AddFinalizer(cs, finalizerName)
+
+			boolTrue := true
+			cs.Status.Registered = &boolTrue
 			_, err := informer.clientSet.CronJobSuspend(cs.ObjectMeta.Namespace).Update(cs, metav1.UpdateOptions{})
 			if err != nil {
 				LogForCronJobSuspend(*cs, err.Error(), zerolog.ErrorLevel)

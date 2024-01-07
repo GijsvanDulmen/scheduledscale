@@ -9,8 +9,8 @@ type HorizontalPodAutoscalerScaling struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   HorizontalPodAutoscalerScalingSpec   `json:"spec"`
-	Status HorizontalPodAutoscalerScalingStatus `json:"status"`
+	Spec   HorizontalPodAutoscalerScalingSpec `json:"spec"`
+	Status common.Status                      `json:"status"`
 }
 
 type HorizontalPodAutoscalerScalingSpec struct {
@@ -23,10 +23,6 @@ type ScaleTo struct {
 	MinReplicas *uint32             `json:"minReplicas"`
 	MaxReplicas *uint32             `json:"maxReplicas"`
 	Annotations *common.Annotations `json:"annotations"`
-}
-
-type HorizontalPodAutoscalerScalingStatus struct {
-	ErrorMessage string `json:"errorMessage"`
 }
 
 type HorizontalPodAutoscalerScalingList struct {

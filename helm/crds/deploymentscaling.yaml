@@ -47,10 +47,10 @@ spec:
                         type: object
                         oneOf:
                           - properties:
-                            required: [ "minAvailable" ]
-                          - properties:
-                            required: [ "maxUnavailable" ]
+                            required: [ "enabled" ]
                         properties:
+                          enabled:
+                            type: boolean
                           minAvailable:
                             type: integer
                             minimum: 1
@@ -72,8 +72,8 @@ spec:
             status:
               type: object
               properties:
-                errorMessage:
-                  type: string
+                registered:
+                  type: boolean
   names:
     kind: DeploymentScaling
     plural: deploymentscalings

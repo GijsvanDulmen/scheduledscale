@@ -9,6 +9,9 @@ spec:
   scaleTo:
     - at: "20 * * * * *"
       replicas: 1
+
+      podDisruptionBudget:
+        enabled: false
       
       annotations:
         remove:

@@ -73,6 +73,8 @@ func (informer *Informer) ReconcileHpaScaling(hs *horizontalpodautoscalerscaling
 		if !controllerutil.ContainsFinalizer(hs, finalizerName) {
 			LogForHpaScaling(*hs, "adding finalizer", zerolog.DebugLevel)
 
+			boolTrue := true
+			hs.Status.Registered = &boolTrue
 			controllerutil.AddFinalizer(hs, finalizerName)
 			_, err := informer.clientSet.HorizontalPodAutoscalerScaling(hs.ObjectMeta.Namespace).Update(hs, metav1.UpdateOptions{})
 			if err != nil {

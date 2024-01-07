@@ -9,8 +9,8 @@ type CronJobSuspend struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CronJobSuspendSpec   `json:"spec"`
-	Status CronJobSuspendStatus `json:"status"`
+	Spec   CronJobSuspendSpec `json:"spec"`
+	Status common.Status      `json:"status"`
 }
 
 type CronJobSuspendSpec struct {
@@ -22,10 +22,6 @@ type StateAt struct {
 	At          string              `json:"at"`
 	Suspend     bool                `json:"suspend"`
 	Annotations *common.Annotations `json:"annotations"`
-}
-
-type CronJobSuspendStatus struct {
-	ErrorMessage string `json:"errorMessage"`
 }
 
 type CronJobSuspendList struct {

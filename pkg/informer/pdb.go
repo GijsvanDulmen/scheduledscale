@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	log2 "log"
 	"scheduledscale/pkg/apis/scheduledscalecontroller"
 	"scheduledscale/pkg/apis/scheduledscalecontroller/v1alpha1/deploymentscaling"
 )
@@ -101,6 +102,7 @@ func (informer *Informer) ReconcilePodDisruptionBudget(scaleTo *deploymentscalin
 			_, err = informer.CreatePodDisruptionBudgetFromDeploymentScaling(scaleTo, ds, deployment)
 			if err != nil {
 				log.Error().Msgf("Could not create pdb for %s in %s", ds.Name, ds.Namespace)
+				log2.Print(err)
 				log.Error().Err(err)
 				return
 			}

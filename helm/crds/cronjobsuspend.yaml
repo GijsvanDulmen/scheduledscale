@@ -8,6 +8,14 @@ spec:
     - name: v1alpha1
       served: true
       storage: true
+      additionalPrinterColumns:
+        - name: Labels
+          type: string
+          description: Labels to match on
+          jsonPath: .spec.cronjob.matchLabels
+        - name: Registered
+          type: boolean
+          jsonPath: .status.registered
       schema:
         openAPIV3Schema:
           type: object

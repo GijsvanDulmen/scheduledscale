@@ -7,7 +7,7 @@ go 1.21
 require (
 	github.com/go-co-op/gocron/v2 v2.1.2
 	github.com/rs/zerolog v1.31.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	k8s.io/api v0.29.0
 	k8s.io/apimachinery v0.29.0
 	k8s.io/client-go v0.29.0
